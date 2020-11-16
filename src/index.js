@@ -9,6 +9,9 @@ class HugeUploader {
         this.chunkSize = params.chunkSize || 10;
         this.retries = params.retries || 5;
         this.delayBeforeRetry = params.delayBeforeRetry || 5;
+        if (params.resolveAccessToken) {
+            this.resolveAccessToken = params.resolveAccessToken;
+        }
 
         this.start = 0;
         this.chunk = null;
@@ -99,7 +102,15 @@ class HugeUploader {
         form.append('file', this.chunk);
         this.headers['uploader-chunk-number'] = this.chunkCount;
 
-        return fetch(this.endpoint, { method: 'POST', headers: this.headers, body: form });
+        if (this.resolveAccessToken) {
+            return this.resolveAccessToken()
+                .then((accessToken) => {
+                    this.headers['authorization'] = 'Bearer ' + accessToken;
+                    return fetch(this.endpoint, { method: 'POST', headers: this.headers, body: form });
+                });
+        } else {
+            return fetch(this.endpoint, { method: 'POST', headers: this.headers, body: form });
+        }
     }
 
     /**
